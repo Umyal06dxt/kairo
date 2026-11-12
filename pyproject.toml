@@ -1,0 +1,27 @@
+[project]
+name = "kairo"
+version = "0.1.0"
+description = "Voice-enabled speculative RAG (dual-agent Slow Thinker / Fast Talker)"
+requires-python = ">=3.10"
+dependencies = ["numpy", "faiss-cpu", "openai"]
+
+[project.optional-dependencies]
+openai = ["openai"]
+qdrant = ["qdrant-client"]
+voice = ["faster-whisper", "edge-tts", "av"]
+dev = ["pytest", "pytest-asyncio"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[project.scripts]
+kairo = "kairo.cli:main"
