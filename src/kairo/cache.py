@@ -18,6 +18,9 @@ class _Entry:
     score: float
     expires_at: float
     last_access: float
+    tag: str = ""
+    hits: int = 0
+    created: float = 0.0
 
 
 def _unit(v: np.ndarray) -> np.ndarray:
@@ -49,7 +52,7 @@ class SemanticCache:
             self._entries = live
             self._rebuild()
 
-    def put(self, chunk: Chunk, embedding: np.ndarray, score: float = 0.0) -> bool:
+    def put(self, chunk: Chunk, embedding: np.ndarray, score: float = 0.0, tag: str = "") -> bool:
         """Add a chunk; returns False if it refreshed a near-duplicate instead."""
         self._purge_expired()
         vec = _unit(embedding)
@@ -62,7 +65,7 @@ class SemanticCache:
                 e.last_access = now
                 e.score = max(e.score, score)
                 return False
-        self._entries.append(_Entry(chunk, vec, score, now + self.ttl, now))
+        self._entries.append(_Entry(chunk, vec, score, now + self.ttl, now, tag, 0, now))
         self._index.add(vec[None, :])
         if len(self._entries) > self.max_size:
             lru = min(range(len(self._entries)), key=lambda i: self._entries[i].last_access)
@@ -83,5 +86,14 @@ class SemanticCache:
                 continue
             e = self._entries[int(i)]
             e.last_access = now
-            out.append(Retrieved(e.chunk, e.embedding, float(s)))
+            e.hits += 1
+            out.append(Retrieved(e.chunk, e.embedding, float(s), e.tag))
         return out
+
+    def snapshot(self) -> list[dict]:
+        """Read-only view for UIs: provenance, hit counts, age."""
+        self._purge_expired()
+        now = self._clock()
+        return [{"id": e.chunk.id, "text": e.chunk.text, "tag": e.tag, "hits": e.hits,
+                 "age_s": round(now - e.created, 1), "ttl_left_s": round(e.expires_at - now, 1)}
+                for e in self._entries]

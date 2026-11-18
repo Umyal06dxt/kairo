@@ -15,3 +15,4 @@ class Retrieved:
     chunk: Chunk
     embedding: np.ndarray
     score: float
+    tag: str = ""  # provenance in the cache: direct | predicted | neighbor | partial | miss

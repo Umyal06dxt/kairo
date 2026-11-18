@@ -23,6 +23,36 @@ PREDICT_SYSTEM = (
 )
 
 
+FOLLOWUP_SYSTEM = (
+    "You predict what a user will ask next in a voice conversation with a knowledge-base "
+    "assistant. Output ONLY a JSON array of objects with two string fields: "
+    "\"topic\" = a short document-style description of the content that would answer the "
+    "follow-up (e.g. \"Enterprise plan pricing and annual billing discounts\"), and "
+    "\"question\" = the standalone question the user would plausibly say, in the user's "
+    "own words, with no pronouns or references to earlier turns. Order by likelihood."
+)
+
+
+def parse_followups(text: str, n: int) -> list[dict]:
+    """Tolerantly parse [{"topic","question"}...]; plain strings count as topics."""
+    m = re.search(r"\[.*\]", text, re.DOTALL)
+    if not m:
+        return []
+    try:
+        data = json.loads(m.group(0))
+    except json.JSONDecodeError:
+        return []
+    out: list[dict] = []
+    for item in data if isinstance(data, list) else []:
+        if isinstance(item, str) and item.strip():
+            out.append({"topic": item.strip(), "question": None})
+        elif isinstance(item, dict) and isinstance(item.get("topic"), str) and item["topic"].strip():
+            q = item.get("question")
+            out.append({"topic": item["topic"].strip(),
+                        "question": q.strip() if isinstance(q, str) and q.strip() else None})
+    return out[:n]
+
+
 def parse_topics(text: str, n: int) -> list[str]:
     """Tolerantly extract a JSON string list; return [] on anything malformed."""
     m = re.search(r"\[.*\]", text, re.DOTALL)

@@ -20,6 +20,7 @@ class FaissStore:
         self.dim = dim
         self._index = faiss.IndexFlatIP(dim)
         self._chunks: list[Chunk] = []
+        self.meta: dict = {}  # e.g. {"embedder": "local:BAAI/bge-small-en-v1.5"}
 
     def __len__(self) -> int:
         return len(self._chunks)
@@ -40,12 +41,13 @@ class FaissStore:
         return [Retrieved(self._chunks[i], self._index.reconstruct(int(i)), float(s))
                 for s, i in zip(sims[0], ids[0]) if i >= 0]
 
-    def save(self, path: str | Path) -> None:
+    def save(self, path: str | Path, meta: dict | None = None) -> None:
         p = Path(path)
         p.mkdir(parents=True, exist_ok=True)
         faiss.write_index(self._index, str(p / "index.faiss"))
         (p / "chunks.json").write_text(json.dumps(
             [{"id": c.id, "text": c.text, "meta": c.meta} for c in self._chunks]))
+        (p / "meta.json").write_text(json.dumps(meta or self.meta))
 
     @classmethod
     def load(cls, path: str | Path) -> "FaissStore":
@@ -55,4 +57,6 @@ class FaissStore:
         store._index = index
         store._chunks = [Chunk(d["id"], d["text"], d.get("meta", {}))
                          for d in json.loads((p / "chunks.json").read_text())]
+        if (p / "meta.json").exists():
+            store.meta = json.loads((p / "meta.json").read_text())
         return store

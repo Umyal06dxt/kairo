@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import AsyncIterator, Protocol
 
 import numpy as np
@@ -5,6 +6,12 @@ import numpy as np
 from ..types import Chunk, Retrieved
 
 History = list[tuple[str, str]]
+
+
+@dataclass
+class Prediction:
+    topic: str  # document-style description (used to prefetch chunks)
+    question: str | None = None  # standalone question the user may ask (used to pre-draft an answer)
 
 
 class Embedder(Protocol):
@@ -21,6 +28,9 @@ class LLM(Protocol):
     def stream_answer(self, question: str, context: list[Chunk],
                       history: History) -> AsyncIterator[str]:
         """Stream answer tokens grounded in `context`."""
+
+    # Optional (looked up with getattr): predict_followups(history, n) -> list[Prediction],
+    # draft_answer(question, context) -> str, warmup() -> None
 
 
 class VectorStore(Protocol):

@@ -88,3 +88,31 @@ class ArecordMic:
             except asyncio.IncompleteReadError:
                 return  # arecord exited (no device / permission)
             yield np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+
+
+def decode_to_pcm16k(data: bytes) -> np.ndarray:
+    """Decode browser-recorded audio (webm/opus, ogg, wav, mp4...) to float32 mono 16 kHz."""
+    import av
+    out = []
+    with av.open(io.BytesIO(data)) as container:
+        resampler = av.AudioResampler(format="s16", layout="mono", rate=SR)
+        for frame in container.decode(audio=0):
+            for f in resampler.resample(frame):
+                out.append(f.to_ndarray().reshape(-1))
+        for f in resampler.resample(None):
+            out.append(f.to_ndarray().reshape(-1))
+    if not out:
+        return np.zeros(0, dtype=np.float32)
+    return np.concatenate(out).astype(np.float32) / 32768.0
+
+
+def pcm_to_wav(pcm: np.ndarray, sr: int) -> bytes:
+    """int16 mono PCM -> WAV bytes (what the browser's decodeAudioData plays natively)."""
+    import wave
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(np.asarray(pcm, dtype=np.int16).tobytes())
+    return buf.getvalue()

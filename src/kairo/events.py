@@ -14,6 +14,13 @@ class UserUtterance(Event):
 
 
 @dataclass
+class PartialUtterance(Event):
+    """Interim transcript while the user is still speaking (Stream RAG-style speculation)."""
+
+    text: str
+
+
+@dataclass
 class AgentResponse(Event):
     text: str
 

@@ -9,7 +9,9 @@ dependencies = ["numpy", "faiss-cpu", "openai"]
 openai = ["openai"]
 qdrant = ["qdrant-client"]
 voice = ["faster-whisper", "edge-tts", "av"]
-dev = ["pytest", "pytest-asyncio", "qdrant-client"]
+local = ["fastembed"]
+web = ["fastapi", "uvicorn[standard]"]
+dev = ["pytest", "pytest-asyncio", "qdrant-client", "httpx", "fastembed", "fastapi", "uvicorn[standard]"]
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -26,3 +28,6 @@ pythonpath = ["src"]
 
 [project.scripts]
 kairo = "kairo.cli:main"
+
+[tool.setuptools.package-data]
+kairo = ["server/static/*"]

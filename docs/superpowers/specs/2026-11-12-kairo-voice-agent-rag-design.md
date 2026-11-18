@@ -94,3 +94,30 @@ Embedding dim is read from the embedder, not hard-coded.
 - Prediction cost: 5 predictions x 10 chunks per turn is embedding-API heavy; keep batch embedding.
 - Stale cache if KB changes mid-conversation (TTL only).
 - Paper evaluates retrieval latency, not end-to-end; LLM latency dominates unless a fast model is used.
+
+## 11. Beyond the paper (added 2026-11-18)
+
+Findings from reproducing the paper drove these additions; each has a `Config` switch and is off in `PAPER`.
+
+| Problem found | Addition | Switch |
+|---|---|---|
+| A hit counts as success even when the cache serves the wrong pages (reactive cache: 90% hits, ~70% match the database's top-3) | **Speculate-then-verify**: on a hit start the LLM with cached context, run the database search in parallel (~100 ms, done before the LLM's first token ~1 s); if the store's top-1 page is not in the context, cancel before any token is spoken and regenerate | `verify_hits` |
+| Retrieval is not the bottleneck: the LLM's first token (~1.2 s) and an API embedding (~0.7 s) dominate | **Pre-drafted answers** for predicted questions, served on a close question match plus evidence check; **on-device embeddings** (bge-small, ~5 ms) | `speculative_answers`, `answer_threshold`; `LocalEmbedder` |
+| LLM prediction costs a call per turn | **Neighbour prefetch**: fetch pages nearest to what was just retrieved (no LLM, no embedding call) | `strategy="neighbors"/"hybrid"` |
+| Dense retrieval blurs exact tokens | Cheap BM25+dense rerank over cached candidates | `lexical_rerank` |
+| Long contexts slow prefill | Send fewer chunks to the answering LLM than the cache returns | `llm_context_chunks` |
+| Retrieval can wait for the final transcript | **Partial-transcript speculation** (Stream RAG) | `router.speculate`, `PartialUtterance` |
+| Similarity scales differ by embedder (correct chunk ~0.48 on OpenAI, ~0.71 on bge-small) | Per-embedder default threshold | `DEFAULT_TAU` |
+
+`OPTIMIZED` bundles the safe ones. Honest accounting of what each costs (accuracy, tail latency, extra model calls) is in `docs/benchmarks/`.
+
+### 11.1 Evaluation additions
+- Domains with gold answers (`bench/bank.py`: fictional credit union, 12 docs + 64 generated near-domain distractor pages, 10 scripted calls, 100 gold turns). Gold facts are checked with whole-token matching.
+- Metrics: hit rate, *right page used*, *answer contains gold facts*, *fidelity* (served top-3 vs the store's exact top-3 on hits), wait before the first word (p50/p90).
+- Runs are single-shot (n≈100): differences under ~5 points are noise.
+
+### 11.2 Web lab
+FastAPI + one-page UI (`server/`). A websocket is one call. Browser records audio, the server transcribes (Whisper) and speaks (Edge TTS, sent as WAV). The memory board renders the cache by provenance; the ledger narrates the Slow Thinker through `Telemetry`. Experiments run from the page, one at a time, with a confirmation before any run that spends API credit.
+
+### 11.3 Known gaps
+Scripted calls are predictable by construction; knowledge bases are small; background speculation contends with the foreground call for the API (tail latency worsened in the live run); no barge-in; no real call transcripts.

@@ -158,6 +158,16 @@ All 10 tasks done (44 tests passing). Deviations from the plan as written:
 - [x] Test: tiny 2-scenario offline run returns hit rate in [0,1], dual-agent mean retrieval < baseline mean retrieval.
 - [x] Implement; run full offline benchmark; compare to paper Table 1–4 and record the gap honestly.
 
+### Tasks 11-15 (2026-11-18): beyond the paper — DONE
+
+- [x] **11 Speculation toolkit:** `answer_cache.py`, neighbour/hybrid strategies, partial speculation, lexical rerank, `Telemetry`, per-embedder thresholds (`config.py`); tests `test_speculation.py`.
+- [x] **12 Speculate-then-verify:** `fast_talker.py` gate on the first token; tests `test_verify.py` (correction before any token is spoken, store failure, draft rejection).
+- [x] **13 Evaluation:** `bench/domains.py`, `bench/bank.py` (gold), `bench/distractors.py`, profile runner with accuracy/evidence/fidelity/user-wait, `--set` overrides, resilient to transient API failures.
+- [x] **14 Local embeddings + offline LLM:** `providers/local.py`, `ExtractiveLLM`; embedder choice made from a recall measurement (bge-small plain query, no prefix).
+- [x] **15 Web lab:** `server/` (session, app, experiments API), `static/` page; `tests/test_server.py`.
+
+Not done / next: real call transcripts, learned topic-transition predictor, barge-in, measuring partial-transcript speculation end to end, larger knowledge bases.
+
 ## Self-Review
 
 - Spec coverage: §3 components -> Tasks 1–10; §4 -> 3; §5 -> 6; §6 -> 5; §7 -> 9; §9 -> 10. TopicShift/SilenceDetected producers intentionally out of scope.
