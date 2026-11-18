@@ -1,4 +1,4 @@
-# Kairo experiment — domain **bank** (embedder=local, llm=extractive)
+# Kairo experiment — domain **bank** (embedder=local, llm=extractive, tau=0.60)
 
 > extractive stand-in LLM (simulated 400 ms first token; real GPT measured ~1200 ms): no follow-up prediction, so only the none/neighbors strategies are meaningful; answers are copied sentences
 > 64 near-domain distractor pages added (GPT-written, same credit union)
@@ -7,10 +7,10 @@
 
 | Profile | Hit rate | Warm | Draft | Accuracy | Evidence | Fidelity | Embed ms | Hit retr. ms | LLM 1st tok ms | **User p50 ms** | p90 ms |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Traditional RAG (no cache) | 0% | 0% | 0% | — | 97% | — | 15 | — | 403 | **529** | 537 |
-| Reactive cache (no prediction) | 90% | 100% | 0% | — | 93% | 70% | 7 | 0.13 | 401 | **407** | 424 |
-| Neighbour prefetch (no LLM) | 90% | 100% | 0% | — | 94% | 76% | 7 | 0.15 | 401 | **407** | 428 |
-| Neighbours + verify + rerank (no LLM) | 78% | 87% | 0% | — | 92% | 77% | 8 | 0.56 | 449 | **408** | 1210 |
+| Traditional RAG (no cache) | 0% | 0% | 0% | — | 97% | — | 15 | — | 403 | **528** | 540 |
+| Reactive cache (no prediction) | 84% | 93% | 0% | — | 92% | 72% | 5 | 0.11 | 401 | **406** | 518 |
+| Neighbour prefetch (no LLM) | 84% | 93% | 0% | — | 94% | 78% | 5 | 0.11 | 401 | **406** | 517 |
+| Neighbours + verify + rerank (no LLM) | 74% | 82% | 0% | — | 91% | 77% | 6 | 0.39 | 441 | **407** | 595 |
 
 _User ms = embed + retrieval + LLM first token (excludes STT/TTS). Fidelity = overlap of served top-3 chunks with the store's exact top-3 on cache hits._
 

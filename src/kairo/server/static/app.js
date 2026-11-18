@@ -374,9 +374,12 @@ function poll() {
   }, 1200);
 }
 
-function bestIdx(vals, higher) {
+function bestIdx(vals, higher, isRate) {
+  // Only mark a winner when it clearly beats the runner-up; one run of ~100 turns can't resolve less.
   const ok = vals.map((v, i) => [v, i]).filter(([v]) => v != null); if (ok.length < 2) return -1;
-  return ok.reduce((a, b) => ((higher ? b[0] > a[0] : b[0] < a[0]) ? b : a))[1];
+  const sorted = [...ok].sort((a, b) => (higher ? b[0] - a[0] : a[0] - b[0]));
+  const gap = Math.abs(sorted[0][0] - sorted[1][0]), scale = Math.max(Math.abs(sorted[1][0]), 1e-9);
+  return (isRate ? gap >= 0.04 : gap / scale >= 0.08) ? sorted[0][1] : -1;
 }
 function renderResult(r) {
   const root = $("#x-results"); root.innerHTML = ""; if (!r) return;
@@ -384,12 +387,12 @@ function renderResult(r) {
   root.append(h("p", { class: "note", text: `${r.env}. ${r.generated || ""}` }), ...(r.notes || []).map((n) => h("p", { class: "note", text: n })));
   const cols = [["Hit rate", "hit_rate", true, pct], ["Right page", "evidence", true, pct], ["Answer correct", "accuracy", true, pct], ["Hit fidelity", "fidelity", true, pct],
                 ["Wait p50", "user_p50", false, fmtMs], ["Wait p90", "user_p90", false, fmtMs], ["First word", "llm_ms", false, fmtMs]];
-  const best = cols.map(([, key, hi]) => bestIdx(P.map((p) => p.s[key]), hi));
+  const best = cols.map(([, key, hi, f]) => bestIdx(P.map((p) => p.s[key]), hi, f === pct));
   root.append(h("h3", { text: "Results" }), h("div", { class: "tblwrap" }, h("table", {},
     h("thead", {}, h("tr", {}, h("th", { text: "Strategy" }), cols.map(([t]) => h("th", { text: t })))),
     h("tbody", {}, P.map((p, i) => h("tr", {}, h("td", { text: p.label }),
       cols.map(([, key, , f], c) => h("td", { class: best[c] === i ? "best" : "", text: f(p.s[key]) }))))))));
-  root.append(h("p", { class: "note", text: "Wait is the time before the first word: understanding the question, looking up pages, and the model's first token. “Right page” is how often the page holding the answer was among those used. Fidelity is how often a memory hit served the same pages the database would have." }));
+  root.append(h("p", { class: "note", text: "Bold green marks a clear winner (4+ points, or 8%+ faster); smaller gaps are within the noise of a single run. Wait is the time before the first word: understanding the question, looking up pages, and the model's first token. “Right page” is how often the page holding the answer was among those used. Fidelity is how often a memory hit served the same pages the database would have." }));
   root.append(h("h3", { text: "How long the caller waits (median and slowest 10%)" }), waitChart(P));
   if (r.sweep && r.sweep.length) root.append(h("h3", { text: "Memory strictness: more hits or better hits?" }), sweepChart(r.sweep));
 }
@@ -428,24 +431,38 @@ function renderResearch() {
   fetch("/api/experiments").then((r) => r.json()).then((d) => paintResearch(d.saved || []));
 }
 function paintResearch(runs) {
-  const live = runs.find((r) => /openai/.test(r.env)) || null, off = runs.find((r) => /extractive/.test(r.env)) || null;
-  const row = (r, key) => r && r.profiles[key] && r.profiles[key].summary;
+  const isLive = (r) => /llm=openai/.test(r.env), isOff = (r) => /llm=extractive/.test(r.env);
+  const liveBase = runs.find((r) => isLive(r) && r.profiles.baseline);      // has the plain-RAG comparison
+  const liveOpt = runs.find((r) => isLive(r) && r.profiles.optimized);     // newest optimized settings
+  const off = runs.find((r) => isOff(r) && r.profiles.reactive && r.profiles.baseline);
+  const S_ = (r, k) => (r && r.profiles[k] ? r.profiles[k].summary : null);
   const f = $("#findings"); f.innerHTML = "";
   const sec = (title, status, cls, ...body) => f.append(h("h2", {}, title, h("span", { class: "status " + cls, text: status })), ...body);
   const num = (t) => h("span", { class: "num", text: t });
+  const need = (what) => h("p", { class: "empty", text: `Run ${what} on the Experiments tab to fill in the measured numbers here.` });
+  const base = S_(liveBase, "baseline"), opt = S_(liveOpt, "optimized"), paper = S_(liveBase, "paper"), fast = S_(liveBase, "fast");
+  const rea = S_(off, "reactive"), nei = S_(off, "neighbors"), obase = S_(off, "baseline"), ver = S_(off, "verified");
 
   sec("1. The wait that matters is not the database", "measured", "yes",
-    h("p", {}, "The paper reports a 316x faster lookup on a cache hit, from 110 ms to 0.35 ms. That is real, but a caller waits for three things: understanding the question, finding pages, and the model's first word. Measured here, embedding the question through an API took ", num("about 680 ms"), " and GPT-4o-mini's first token took ", num("about 1.2 s"), ". The database trip the cache removes is a small slice. Two changes matter more: embedding on the device (", num("5 ms"), ") and not waiting for the model at all, which is the next idea."));
+    h("p", {}, "The paper reports a 316x faster lookup on a cache hit, from 110 ms to 0.35 ms. That is real, but a caller waits for three things: understanding the question, finding pages, and the model's first word. Measured here, embedding the question through an API took ", num("about 680 ms"), " and GPT-4o-mini's first token ", num("about 1.2 s"), ". The database trip the cache removes is a small slice of that. Embedding on the device (", num("5 ms"), ") and not waiting for the model at all are bigger levers."));
+
   sec("2. Answer before being asked", "built, measured", "part",
-    h("p", {}, "While the caller listens, the background agent can do more than load pages. It can write the answer to the question it expects. If the caller then asks something close enough, and the pages behind the draft are in memory, Kairo speaks the draft with no model wait. This borrows the draft-then-verify structure of Speculative RAG (Wang et al., Google). The open question is how often drafts match, and how often a confident draft is wrong."),
-    live ? h("p", {}, "In the latest live run, the optimized strategy's median wait was ", num(fmtMs(row(live, "optimized")?.user_p50)), " against ", num(fmtMs(row(live, "baseline")?.user_p50)), " for traditional RAG.") : h("p", { class: "empty", text: "Run a live experiment (GPT answers) to fill in the measured numbers here." }));
+    h("p", {}, "While the caller listens, the background agent can write the answer to the question it expects. If the caller then asks something close enough, and the pages behind the draft are in memory and confirmed by the database, Kairo speaks the draft with no model wait. This borrows the draft-then-verify structure of Speculative RAG (Wang et al., Google)."),
+    base && opt ? h("p", {}, `On 100 scripted calls with GPT answers, the tuned strategy's median wait was `, num(fmtMs(opt.user_p50)), " against ", num(fmtMs(base.user_p50)), " for traditional RAG, with answers correct ", num(pct(opt.accuracy)), " vs ", num(pct(base.accuracy)), ". Pre-drafted answers served ", num(pct(opt.draft_rate)), " of turns. The slowest 10% got worse, ", num(fmtMs(opt.user_p90)), " vs ", num(fmtMs(base.user_p90)), ", because background speculation shares the API with the live answer and corrections cost a second pass.") : need("a live comparison (GPT answers, baseline and optimized)"),
+    h("p", {}, "So the median gain is modest when the model's first token takes about a second, and drafts are the only lever that removes it. Raising the share of turns they cover, without serving a wrong draft, is the open question."));
+
   sec("3. Is a hit a good hit?", "measured", "yes",
-    h("p", {}, "A hit rate counts every time memory had something above the similarity threshold. It does not check whether those pages are the ones the database would have returned. With a 157-page knowledge base and on-device embeddings, a memory-only cache hit ", num("90%"), " of the time, but its pages matched the database's top three only ", num("70%"), " of the time, and the right source page was used ", num("91-93%"), " of the time against ", num("97%"), " for a plain lookup."),
-    h("p", {}, "The fix borrows from RaLMSpec: speculate, then verify. On a hit, start the model with remembered pages and check the database in parallel. The check takes about 110 ms and the first token about a second, so it finishes before anything is spoken. If the top database page is missing, cancel and answer again. Hit rate drops, because wrong hits become corrections, and answers match traditional RAG."),
+    h("p", {}, "A hit rate counts every time memory held something above the similarity threshold. It does not check that those pages are the ones the database would have returned."),
+    rea && obase ? h("p", {}, "With a 157-page knowledge base and on-device embeddings, a memory-only cache hit ", num(pct(rea.hit_rate)), " of the time, but the pages it served matched the database's top three only ", num(pct(rea.fidelity)), " of the time, and the right source page was used ", num(pct(rea.evidence)), " of the time against ", num(pct(obase.evidence)), " for a plain lookup.") : need("an offline comparison"),
+    paper && fast ? h("p", {}, "The same gap shows up in answers. With GPT, the paper's design answered ", num(pct(paper.accuracy)), " correctly and an unverified, faster variant ", num(pct(fast.accuracy)), ", against ", num(pct(base?.accuracy)), " for plain RAG.") : null,
+    h("p", {}, "The fix borrows from RaLMSpec: speculate, then verify. On a hit, start the model with remembered pages and check the database in parallel. The check takes about 110 ms and the first token about a second, so it finishes before anything is spoken. If the top database page is missing, cancel and answer again. Hit rate drops because wrong hits become corrections, and accuracy returns to plain-RAG level."),
     off ? h("div", { class: "tblwrap" }, h("table", {}, h("thead", {}, h("tr", {}, h("th", { text: "Offline run" }), ["Hit rate", "Right page", "Fidelity", "Wait p50"].map((t) => h("th", { text: t })))),
       h("tbody", {}, Object.entries(off.profiles).map(([k, p]) => h("tr", {}, h("td", { text: p.label }), h("td", { text: pct(p.summary.hit_rate) }), h("td", { text: pct(p.summary.evidence) }), h("td", { text: pct(p.summary.fidelity) }), h("td", { text: fmtMs(p.summary.user_p50) })))))) : null);
+
   sec("4. Predict without a language model", "measured", "part",
-    h("p", {}, "Asking GPT for follow-ups costs a call per turn. A cheaper guess: after finding the pages for this question, load the pages nearest to them. No model, no embedding call. On the offline runs it matched memory-only hit rates and served better-matching pages (fidelity ", num("76%"), " vs ", num("70%"), "). Whether it competes with GPT prediction on conversations that jump topics needs the live comparison."));
+    h("p", {}, "Asking GPT for follow-ups costs a call per turn. A cheaper guess: after finding the pages for this question, load the pages nearest to them. No model, no embedding call."),
+    rea && nei ? h("p", {}, "On the offline runs it matched memory-only hit rates (", num(pct(nei.hit_rate)), " vs ", num(pct(rea.hit_rate)), ") and served better-matching pages (fidelity ", num(pct(nei.fidelity)), " vs ", num(pct(rea.fidelity)), "). Whether it competes with GPT prediction on conversations that jump topics needs the live comparison.") : need("an offline comparison"));
+
   sec("5. Start before the caller finishes", "built, not yet measured", "open",
     h("p", {}, "Stream RAG (Arora et al.) predicts tool calls while the user is still speaking. Kairo does the retrieval half: partial text, typed or from the browser's speech recognition, triggers a lookup that fills memory before the final transcript arrives. Violet lamps on the board show it. We have not measured how much it helps; the experiment is to replay calls word by word and compare time-to-first-word."));
 

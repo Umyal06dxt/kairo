@@ -109,3 +109,10 @@ def test_cache_matches_bruteforce_on_random_data():
         sims = V @ q
         expect = [str(i) for i in np.argsort(-sims)[:k] if sims[i] >= tau]
         assert [r.chunk.id for r in c.get(q, k, tau)] == expect
+
+
+async def test_extractive_llm_does_not_leak_markdown_headings():
+    from kairo.providers.fake import ExtractiveLLM
+    ctx = [Chunk("a", "# Fee Schedule\n\nOverdraft fee: 30 dollars per item. Stop payment costs 20 dollars.")]
+    out = "".join([t async for t in ExtractiveLLM().stream_answer("overdraft fee", ctx, [])])
+    assert "#" not in out and "30 dollars" in out

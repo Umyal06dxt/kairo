@@ -33,7 +33,7 @@ def unit(*xs):
 def test_paper_config_is_unchanged_and_optimized_differs():
     assert PAPER == Config() and not PAPER.speculative_answers and PAPER.llm_context_chunks == 10
     assert OPTIMIZED.speculative_answers and OPTIMIZED.strategy == "hybrid"
-    assert OPTIMIZED.llm_context_chunks == 4 and OPTIMIZED.similarity_threshold == 0.40
+    assert OPTIMIZED.llm_context_chunks == 6 and OPTIMIZED.similarity_threshold == 0.40
     assert OPTIMIZED.verify_hits and OPTIMIZED.lexical_rerank and not PAPER.verify_hits
 
 

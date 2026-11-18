@@ -120,3 +120,11 @@ def test_experiment_api_validation_and_offline_run(client):
     assert set(cur["result"]["profiles"]) == {"baseline", "reactive"}
     saved = client.get("/api/experiments").json()["saved"]
     assert saved and saved[0]["id"] == rid and "markdown" in saved[0]
+
+
+def test_board_titles_are_short_and_readable():
+    from kairo.server.session import _title
+    assert _title("# Harbor Federal Credit Union - Accounts\n\nbody") == "Accounts"
+    assert _title("# Fee Schedule\nx") == "Fee Schedule"
+    assert _title("# NovaCRM Pricing Plans\nx") == "Pricing Plans"
+    assert _title("### Business Checking at Harbor Federal Credit Union") .startswith("Business Checking")

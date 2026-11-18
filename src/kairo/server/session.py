@@ -58,6 +58,15 @@ class Settings:
         return s
 
 
+def _title(text: str) -> str:
+    """Short row label: the first heading without the institution prefix."""
+    first = text.strip().splitlines()[0].lstrip("# ").strip()
+    for prefix in ("Harbor Federal Credit Union - ", "Harbor Federal Credit Union", "NovaCRM "):
+        if first.startswith(prefix) and len(first) > len(prefix) + 2:
+            first = first[len(prefix):].strip(" -")
+    return (first[:1].upper() + first[1:])[:48]
+
+
 class Shared:
     """Expensive, reusable resources: embedding models, indexes, Whisper, Edge TTS."""
 
@@ -114,7 +123,7 @@ class Shared:
         store = FaissStore(emb.dim)
         await store.add(chunks, vecs)
         board = {"docs": [
-            {"name": n, "title": t.strip().splitlines()[0].lstrip("# ").strip()[:60],
+            {"name": n, "title": _title(t),
              "extra": n in extra,
              "chunks": [c.id for c in chunks if c.id.rsplit(":", 1)[0] == n]}
             for n, t in docs.items()], "n_chunks": len(chunks), "n_extra": len(extra)}

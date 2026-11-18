@@ -43,10 +43,10 @@ class Config:
 
 PAPER = Config()
 # Tuned profile used by the CLI/web lab by default: hybrid prediction, speculative answers,
-# smaller LLM context, lexical rerank, and speculate-then-verify (answers match traditional RAG).
+# a smaller LLM context (6 chunks: 4 cost accuracy in live runs), lexical rerank, and speculate-then-verify (answers match traditional RAG).
 # Re-tune thresholds per embedder.
-OPTIMIZED = replace(Config(), strategy="hybrid", speculative_answers=True, llm_context_chunks=4,
-                    lexical_rerank=True, verify_hits=True)
+OPTIMIZED = replace(Config(), strategy="hybrid", speculative_answers=True, llm_context_chunks=6,
+                    answer_threshold=0.78, lexical_rerank=True, verify_hits=True)
 
 
 # Query-to-document cosine scales differ a lot between embedders (a correct chunk scores ~0.48 on

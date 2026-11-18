@@ -116,7 +116,8 @@ class ExtractiveLLM:
             yield "I don't have that information."
             return
         q = self._words(question)
-        sents = [s.strip() for c in context for s in re.split(r"(?<=[.!?])\s+", c.text) if s.strip()]
+        body = [ln for c in context for ln in c.text.splitlines() if not ln.lstrip().startswith("#")]
+        sents = [s.strip() for ln in body for s in re.split(r"(?<=[.!?])\s+", ln) if s.strip()]
         ranked = sorted(sents, key=lambda s: -len(q & self._words(s)))
         answer = " ".join(ranked[:2])
         for w in answer.split(" "):
