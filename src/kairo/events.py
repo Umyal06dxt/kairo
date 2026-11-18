@@ -10,6 +10,7 @@ class Event:
 @dataclass
 class UserUtterance(Event):
     text: str
+    embedding: np.ndarray | None = None  # shared query embedding (computed once by the router)
 
 
 @dataclass

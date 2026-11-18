@@ -6,7 +6,7 @@
 
 **Architecture:** Python asyncio. `MemoryRouter` publishes utterances on a `ConversationStream`; `FastTalker` (cache-first answer) and `SlowThinker` (predict + prefetch) consume concurrently. Cache = FAISS flat-IP over document-chunk embeddings. All external services behind protocols so everything is testable offline.
 
-**Tech Stack:** Python 3.10, numpy, faiss-cpu, pytest + pytest-asyncio; optional: openai, anthropic, qdrant-client, faster-whisper, edge-tts, sounddevice.
+**Tech Stack:** Python 3.10, numpy, faiss-cpu, pytest + pytest-asyncio; openai, qdrant-client; optional voice: faster-whisper, edge-tts, av (arecord/aplay for audio I/O).
 
 **Spec:** `docs/superpowers/specs/2026-11-12-kairo-voice-agent-rag-design.md`
 
@@ -33,7 +33,7 @@
 ```
 pyproject.toml
 src/kairo/{__init__,config,events,stream,cache,types}.py
-src/kairo/providers/{__init__,base,fake,openai_,anthropic_,qdrant_,faiss_store}.py
+src/kairo/providers/{__init__,base,fake,prompts,openai_,qdrant_,faiss_store}.py
 src/kairo/{slow_thinker,fast_talker,router,ingest}.py
 src/kairo/voice/{__init__,stt,tts,mic,loop}.py
 src/kairo/bench/{__init__,kb,scenarios,run}.py
@@ -129,17 +129,13 @@ All 10 tasks done (44 tests passing). Deviations from the plan as written:
 - [x] Test (end-to-end, fakes, store latency 50 ms): scripted 5-turn single-topic conversation with 0.2 s gaps -> turns >=3 are cache hits; `stop()` cancels the SlowThinker task cleanly.
 - [x] Implement; run -> PASS.
 
-### Task 4b: AnthropicLLM — DONE
-
-`src/kairo/providers/anthropic_.py` (`AnthropicLLM(model="claude-opus-5-5", effort="low", use_fallbacks=True, client=None)`, `parse_topics`), `tests/test_anthropic_llm.py` (request shape has no temperature/thinking, refusal -> `[]`, tolerant JSON parse). Spec §8.1.
-
 ### Task 8: Real providers + ingest + CLI (text mode) — DONE
 
-`OpenAIEmbedder` and `OpenAILLM` are DONE (`providers/openai_.py`, `tests/test_openai_providers.py`); shared prompts in `providers/prompts.py`. Remaining here: `QdrantStore`, `FaissStore`, ingest, CLI with `--llm {openai,anthropic}`.
+`OpenAIEmbedder` and `OpenAILLM` are DONE (`providers/openai_.py`, `tests/test_openai_providers.py`); shared prompts in `providers/prompts.py`. Remaining here: `QdrantStore`, `FaissStore`, ingest, CLI (GPT only).
 
-**Files:** Create `src/kairo/providers/{openai_,anthropic_,qdrant_,faiss_store}.py`, `src/kairo/ingest.py`, `src/kairo/cli.py`, tests for chunker and FaissStore.
+**Files:** Create `src/kairo/providers/{openai_,qdrant_,faiss_store}.py`, `src/kairo/ingest.py`, `src/kairo/cli.py`, tests for chunker and FaissStore.
 
-**Interfaces — Produces:** `chunk_text(text: str, size=512, overlap=50) -> list[str]` (recursive split on `\n\n`, `\n`, `. `, ` `); `OpenAIEmbedder`, `OpenAILLM`, `AnthropicLLM`, `QdrantStore`, `FaissStore`; `kairo chat --kb DIR` text REPL.
+**Interfaces — Produces:** `chunk_text(text: str, size=512, overlap=50) -> list[str]` (recursive split on `\n\n`, `\n`, `. `, ` `); `OpenAIEmbedder`, `OpenAILLM`, `QdrantStore`, `FaissStore`; `kairo chat --index DIR` text REPL.
 
 - [x] Tests: `chunk_text` never exceeds size, consecutive chunks overlap, empty string -> `[]`; FaissStore round-trips add/search. Network providers: construction-only tests (no network).
 - [x] Implement; `kairo chat` smoke-run against fakes.

@@ -1,5 +1,6 @@
 """Qdrant vector store (Qdrant Cloud in production; ':memory:' works for tests)."""
 
+import asyncio
 import uuid
 
 import numpy as np
@@ -14,16 +15,21 @@ class QdrantStore:
         self.dim, self.collection = dim, collection
         self._client = client or AsyncQdrantClient(url=url, api_key=api_key)
         self._ready = False
+        self._lock = asyncio.Lock()  # Fast Talker and Slow Thinker may race on first use
 
     async def _ensure(self) -> None:
         if self._ready:
             return
-        if not await self._client.collection_exists(self.collection):
-            await self._client.create_collection(
-                self.collection,
-                vectors_config=models.VectorParams(size=self.dim, distance=models.Distance.COSINE),
-            )
-        self._ready = True
+        async with self._lock:
+            if self._ready:
+                return
+            if not await self._client.collection_exists(self.collection):
+                await self._client.create_collection(
+                    self.collection,
+                    vectors_config=models.VectorParams(size=self.dim,
+                                                       distance=models.Distance.COSINE),
+                )
+            self._ready = True
 
     async def add(self, chunks: list[Chunk], embeddings: np.ndarray) -> None:
         if len(chunks) != len(embeddings):

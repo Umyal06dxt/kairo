@@ -31,7 +31,8 @@ class SlowThinker:
                 if isinstance(event, UserUtterance):
                     if utterance_task and not utterance_task.done():
                         utterance_task.cancel()  # stale cycle must not delay this one
-                    utterance_task = asyncio.create_task(self.handle_utterance(event.text))
+                    utterance_task = asyncio.create_task(
+                        self.handle_utterance(event.text, event.embedding))
                 elif isinstance(event, PriorityRetrieval):
                     t = asyncio.create_task(self.handle_priority(event))
                     priority_tasks.add(t)
@@ -41,18 +42,18 @@ class SlowThinker:
                 if t and not t.done():
                     t.cancel()
 
-    async def handle_utterance(self, text: str) -> None:
+    async def handle_utterance(self, text: str, embedding=None) -> None:
         try:
-            await self._cycle(text)
+            await self._cycle(text, embedding)
         except asyncio.CancelledError:
             raise
         except Exception:
             log.exception("slow thinker cycle failed")
 
-    async def _cycle(self, text: str) -> None:
+    async def _cycle(self, text: str, embedding=None) -> None:
         cfg = self.config
-        # 1. direct retrieval for the current utterance
-        vec = (await self.embedder.embed([text]))[0]
+        # 1. direct retrieval for the current utterance (reuse the router's embedding if given)
+        vec = embedding if embedding is not None else (await self.embedder.embed([text]))[0]
         for r in await self.store.search(vec, cfg.prefetch_top_k):
             self.cache.put(r.chunk, r.embedding, r.score)
 

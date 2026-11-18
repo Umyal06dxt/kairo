@@ -107,3 +107,11 @@ async def test_run_handles_priority_event():
     with pytest.raises(asyncio.CancelledError):
         await task
     assert "delta" in cached_ids(cache)
+
+
+async def test_provided_embedding_skips_the_embed_call():
+    st, emb, store, cache, _ = await build()
+    v = (await emb.embed(["alpha"]))[0]
+    emb.calls = 0
+    await st.handle_utterance("alpha", embedding=v)
+    assert emb.calls == 0 and cached_ids(cache) == {"alpha"}

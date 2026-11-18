@@ -58,3 +58,27 @@ async def test_stop_is_clean_and_idempotent():
     await router.start()
     await router.stop()
     await router.stop()
+
+
+class SlowEmbedder(HashEmbedder):
+    """Embedding takes real time, as with a remote API: the Slow Thinker used to win the race."""
+
+    async def embed(self, texts):
+        await asyncio.sleep(0.05)
+        return await super().embed(texts)
+
+
+async def test_query_embedded_once_and_cold_turn_is_a_true_miss():
+    emb = SlowEmbedder(dim=256)
+    store = InMemoryStore(emb.dim, latency_s=0.02)
+    await store.add([Chunk(str(i), d) for i, d in enumerate(DOCS)], await HashEmbedder(256).embed(DOCS))
+    llm = FakeLLM(topics=["annual billing discount pricing", "enterprise plan seats pricing"])
+    router = MemoryRouter.create(emb, llm, store, Config(prefetch_top_k=2, rate_limit_s=0.0))
+    await router.start()
+    try:
+        r = await router.handle_utterance("what are the pricing plans")
+        await asyncio.sleep(0.4)  # let the Slow Thinker finish its cycle
+    finally:
+        await router.stop()
+    assert r.hit is False and r.source == "store"  # cold start must miss, as in the paper
+    assert emb.calls == 2  # one embed for the utterance + one batch for the predictions

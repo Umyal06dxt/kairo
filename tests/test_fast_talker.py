@@ -1,4 +1,3 @@
-import numpy as np
 
 from kairo.cache import SemanticCache
 from kairo.config import Config
@@ -75,3 +74,10 @@ async def test_fallback_disabled_does_not_touch_store():
     ft, emb, store, cache, q = await build(config=Config(fallback_to_store=False))
     r = await ft.answer("pricing plans")
     assert not r.hit and store.search_calls == []
+
+
+async def test_first_token_latency_recorded():
+    ft, *_ = await build()
+    r = await ft.answer("pricing plans")
+    assert r.llm_first_token_ms is not None and r.llm_first_token_ms >= 0
+    assert (await ft.answer("  ")).llm_first_token_ms is None

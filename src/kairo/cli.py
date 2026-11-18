@@ -41,7 +41,14 @@ def _store(args, dim: int):
         from .providers.qdrant_ import QdrantStore
         url = os.environ.get("QDRANT_URL") or sys.exit("QDRANT_URL is not set.")
         return QdrantStore(dim, args.collection, url, os.environ.get("QDRANT_API_KEY"))
-    return FaissStore.load(args.index)
+    try:
+        store = FaissStore.load(args.index)
+    except (OSError, RuntimeError):
+        sys.exit(f"No index at {args.index!r}. Run: kairo ingest --kb <docs> --index {args.index}")
+    if store.dim != dim:
+        sys.exit(f"Index has {store.dim}-d vectors but --embed-model gives {dim}-d. "
+                 f"Re-ingest with the same --embed-model.")
+    return store
 
 
 async def cmd_ingest(args) -> None:
@@ -86,7 +93,12 @@ async def cmd_chat(args) -> None:
             if not text:
                 break
             print("kairo> ", end="", flush=True)
-            r = await router.handle_utterance(text, on_token=lambda t: print(t, end="", flush=True))
+            try:
+                r = await router.handle_utterance(
+                    text, on_token=lambda t: print(t, end="", flush=True))
+            except Exception as e:  # API/network error: report and keep the session alive
+                print(f"\n  [error: {type(e).__name__}: {e}]")
+                continue
             turns += 1
             hits += r.hit
             print(f"\n  [{'cache HIT' if r.hit else r.source}] embed={r.embed_ms:.0f}ms "
@@ -111,6 +123,8 @@ async def cmd_bench(args) -> None:
     from .bench.run import format_report, run_benchmark
     if args.mode == "live":
         _need_key()
+        if args.qdrant and not os.environ.get("QDRANT_URL"):
+            sys.exit("--qdrant needs QDRANT_URL (and QDRANT_API_KEY) in the environment/.env.")
     taus = [0.55, 0.50, 0.45, 0.40, 0.35, 0.30] if args.sweep else None
     reports = await run_benchmark(
         args.mode, Config(), taus=taus,

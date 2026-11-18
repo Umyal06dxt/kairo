@@ -17,6 +17,8 @@ EMBED_DIMS = {"text-embedding-3-small": 1536, "text-embedding-3-large": 3072,
 class OpenAIEmbedder:
     def __init__(self, model: str = "text-embedding-3-small",
                  client: openai.AsyncOpenAI | None = None):
+        if model not in EMBED_DIMS:
+            raise ValueError(f"unknown embedding model {model!r}; known: {sorted(EMBED_DIMS)}")
         self.model = model
         self.dim = EMBED_DIMS[model]
         self._client = client or openai.AsyncOpenAI()
@@ -42,7 +44,7 @@ class OpenAILLM:
         resp = await self._client.chat.completions.create(
             model=self.model,
             temperature=self.temperature,
-            max_tokens=1024,
+            max_completion_tokens=1024,
             messages=[
                 {"role": "system", "content": PREDICT_SYSTEM},
                 {"role": "user",
@@ -56,7 +58,7 @@ class OpenAILLM:
         stream = await self._client.chat.completions.create(
             model=self.model,
             temperature=self.temperature,
-            max_tokens=1024,
+            max_completion_tokens=1024,
             stream=True,
             messages=[{"role": "system", "content": ANSWER_SYSTEM},
                       *build_messages(history, answer_prompt(question, context))],

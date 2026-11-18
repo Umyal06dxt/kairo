@@ -27,7 +27,7 @@ Out of scope (v1): WebRTC telephony, barge-in/interruption handling, multi-user 
 | `events` | `UserUtterance`, `AgentResponse`, `SilenceDetected`, `TopicShift`, `PriorityRetrieval` |
 | `stream.ConversationStream` | asyncio pub/sub bus (each subscriber gets its own queue) + sliding window of last N=10 turns |
 | `cache.SemanticCache` | FAISS `IndexFlatIP` on L2-normalised **document** embeddings; put/get/evict |
-| `providers.*` | `Embedder`, `LLM`, `VectorStore` protocols + OpenAI / Anthropic / Qdrant / FAISS / fake impls |
+| `providers.*` | `Embedder`, `LLM`, `VectorStore` protocols + OpenAI / Qdrant / FAISS / fake impls |
 | `slow_thinker.SlowThinker` | Background task: direct retrieval, LLM topic prediction, parallel prefetch, priority retrieval |
 | `fast_talker.FastTalker` | Embed query -> cache lookup -> fallback + cache-on-miss -> streaming LLM answer |
 | `router.MemoryRouter` | Wires everything; `handle_utterance(text) -> Turn` |
@@ -69,24 +69,17 @@ Concurrency note (paper §2.1): both agents receive the utterance concurrently. 
 - STT: `faster-whisper` (model size configurable, default `base.en`), run in executor thread.
 - TTS: `edge-tts`, synthesized per sentence as LLM tokens stream in, so audio starts before generation finishes.
 - All voice deps optional (`pip install .[voice]`); core + text mode must import without them.
-- Latency reporting per turn: stt_ms, embed_ms, retrieval_ms, llm_first_token_ms, tts_first_audio_ms.
+- Latency reporting per turn: stt_ms, embed_ms, retrieval_ms, llm_first_token_ms, first_audio_ms (printed by `kairo voice`).
 
 ## 8. Config defaults (verbatim from paper Table 6)
 
 cache max 2000; TTL 300 s; tau 0.40; dedup 0.95; predictions/turn 5; prefetch top-k 10; rate limit 0.5 s; fast-talker max chunks 10; fallback on; cache-on-miss on; embedding `text-embedding-3-small` (1536-d); LLM temp 0.3; chunk 512 / overlap 50; stream window 10; prediction history 6 turns.
-Deviation (deliberate): the LLM is **Anthropic Claude** (paper used GPT-4o-mini); embedding dim is read from the embedder, not hard-coded.
+Embedding dim is read from the embedder, not hard-coded.
 
-### 8.1 Anthropic provider decisions
-- Default model `claude-opus-5-5`, overridable (`claude-haiku-5-5` / `claude-sonnet-5-5` are the lower-latency options for voice).
-- Opus 5.5 rejects `temperature`/`top_p` and can't disable thinking, so the paper's temperature 0.3 is not sent; latency is controlled with `output_config.effort` (default `low`).
-- Server-side refusal fallback enabled by default (`fallbacks="default"`); disable with `use_fallbacks=False`. A refusal on topic prediction yields no predictions.
-- Prediction output is a JSON string array parsed tolerantly (malformed -> `[]`).
-- **Anthropic offers no embeddings API**, so Claude is always paired with a separate Embedder.
-
-### 8.2 OpenAI provider (decided 2026-11-12)
+### 8.1 OpenAI provider (decided 2026-11-12)
 - Embeddings: OpenAI `text-embedding-3-small` (1536-d), as in the paper — this resolves the embedder choice; tau 0.40 was tuned on this model.
-- LLM: selectable between `OpenAILLM` (default `gpt-4o-mini`, temperature 0.3, as in the paper) and `AnthropicLLM`. Prompts/parsing are shared in `providers/prompts.py`.
-- **Decision: GPT is the only LLM backend.** The Anthropic provider (§8.1) was implemented, then removed on request.
+- LLM: `OpenAILLM`, default `gpt-4o-mini`, temperature 0.3, as in the paper (uses `max_completion_tokens`). Prompts/parsing live in `providers/prompts.py`.
+- **Decision: GPT is the only LLM backend** (an Anthropic provider was prototyped, then removed on request).
 
 ## 9. Evaluation
 

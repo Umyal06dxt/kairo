@@ -22,3 +22,9 @@ Use `--store qdrant` on `ingest/chat/voice` for Qdrant instead of local FAISS.
 
 ## Test
 `.venv/bin/python -m pytest -q`
+
+## Known limitations
+- The Fast Talker still embeds each query via the OpenAI API (~100-250 ms) before the cache lookup, so only the *vector-DB* round trip is removed from the critical path (as in the paper), not the embedding call.
+- The 0.40 cache threshold was tuned for `text-embedding-3-small`; re-run `kairo bench --sweep` if you change models.
+- Voice endpointing is energy-based (`--vad-threshold`); tune it for your mic. Use headphones to avoid echo (the mic is muted while Kairo speaks, plus 0.4 s).
+- Cached chunks are not invalidated if the knowledge base changes mid-conversation (5-minute TTL only).

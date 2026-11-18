@@ -46,9 +46,11 @@ class MemoryRouter:
         text = text.strip()
         if not text:
             return TurnResult(answer="")
-        # Both agents see the utterance concurrently; Slow Thinker works in the background.
-        await self.stream.publish(UserUtterance(text))
-        result = await self.fast.answer(text, on_token)
+        # Embed once (the Fast Talker needs it first anyway) and share it, so the query is
+        # never embedded twice and the Slow Thinker cannot pre-empt the Fast Talker's lookup.
+        vec, embed_ms = await self.fast.embed_query(text)
+        await self.stream.publish(UserUtterance(text, vec))  # Slow Thinker runs in background
+        result = await self.fast.answer(text, on_token, vec=vec, embed_ms=embed_ms)
         self.stream.add_turn("user", text)
         self.stream.add_turn("assistant", result.answer)
         await self.stream.publish(AgentResponse(result.answer))

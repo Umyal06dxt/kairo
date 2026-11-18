@@ -1,3 +1,5 @@
+import asyncio
+
 import numpy as np
 from qdrant_client import AsyncQdrantClient
 
@@ -63,3 +65,13 @@ async def test_qdrant_store_in_memory():
     res = await store.search((await emb.embed(["pricing"]))[0], 2)
     assert res[0].chunk.id == "p" and res[0].chunk.meta == {"source": "x"}
     assert res[0].embedding.shape == (64,) and np.isfinite(res[0].score)
+
+
+async def test_qdrant_concurrent_first_use_smoke():
+    # Smoke test only: the in-memory client never interleaves, so this passes even without
+    # the lock. The lock in QdrantStore._ensure is a defensive guard for remote clients.
+    emb = HashEmbedder(dim=64)
+    store = QdrantStore(emb.dim, "race", client=AsyncQdrantClient(":memory:"))
+    v = (await emb.embed(["x"]))[0]
+    results = await asyncio.gather(*(store.search(v, 3) for _ in range(8)))
+    assert all(r == [] for r in results)

@@ -92,3 +92,20 @@ async def test_fake_embedder_and_store():
     res = await s.search(v[0], 2)
     assert res[0].chunk.id == "p"
     assert asyncio.get_running_loop().time() - t0 >= 0.045
+
+
+def test_cache_matches_bruteforce_on_random_data():
+    rng = np.random.default_rng(0)
+    for _ in range(100):
+        n = int(rng.integers(1, 50))
+        V = rng.normal(size=(n, 16)).astype(np.float32)
+        V /= np.linalg.norm(V, axis=1, keepdims=True)
+        c = SemanticCache(dim=16, dedup=2.0)  # dedup off: random vectors must all be kept
+        for i, v in enumerate(V):
+            c.put(chunk(i), v)
+        q = rng.normal(size=16).astype(np.float32)
+        q /= np.linalg.norm(q)
+        k, tau = int(rng.integers(1, 15)), float(rng.uniform(-0.2, 0.6))
+        sims = V @ q
+        expect = [str(i) for i in np.argsort(-sims)[:k] if sims[i] >= tau]
+        assert [r.chunk.id for r in c.get(q, k, tau)] == expect
