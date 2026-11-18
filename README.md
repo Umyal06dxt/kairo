@@ -15,17 +15,20 @@ caller ──► Fast Talker ──► memory hit? ──yes──► answer (GP
 ## Run the lab
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install -e '.[dev,voice,qdrant,local,web]'
-echo 'OPENAI_API_KEY=sk-...' > .env        # optional: without it, answers come from an offline stand-in
+make install                                 # Python venv (editable) + web dependencies
+echo 'OPENAI_API_KEY=sk-...' > .env          # optional: without it, answers come from an offline stand-in
 .venv/bin/kairo make-distractors             # optional, ~2 cents: 64 extra pages so the KB isn't tiny
-.venv/bin/kairo serve                        # http://127.0.0.1:8000
+make serve                                   # builds the React UI, then http://127.0.0.1:8000
 ```
 
-The page has three tabs:
+The UI is a React + TypeScript app in `web/` (see `web/README.md`); `make ui` builds it into `src/kairo/server/static/`. Without a build, the server still runs and shows a page explaining how to build it. For hot reload, run `make ui-dev` next to `kairo serve`.
 
-- **Call.** Type or hold the mic button and talk (the browser records, the server transcribes with Whisper and speaks back with Edge TTS). A switchboard shows every page of the knowledge base as a lamp: lit means in memory, colour says why (asked, predicted, nearby, heard while typing, fetched after a miss). The right-hand ledger narrates the background agent. Pick a scripted call to watch prediction happen.
-- **Experiments.** Replay scripted calls against several strategies and compare wait, hit rate, whether the right page was used, and answer correctness.
-- **Research.** The questions this raises, what was measured, and what is open.
+The app is voice-first. On a phone it is a single column with a dock; on a desktop the conversation sits beside a live view of the agent's memory.
+
+- **Home and conversation.** Tap the microphone and talk: a wireframe orb moves with your voice, live text appears as you speak, and your recording becomes a playable voice message. Answers show how they were made (from memory, pre-drafted, or looked up) and how long each step took. Or type, or listen in on a scripted call.
+- **Memory board.** Every page of the knowledge base is a lamp. Lit means in memory; the colour says why (asked, predicted, nearby, heard while typing, fetched after a miss). A ledger narrates the background agent as it works.
+- **Experiments** (menu). Replay scripted calls against several strategies and compare wait, hit rate, whether the right page was used, and answer correctness.
+- **Research** (menu). The questions this raises, what was measured, and what is open.
 
 `.env` is ignored by git. Never commit it.
 
@@ -66,10 +69,11 @@ Generated reports live in `docs/benchmarks/`. Read them with these cautions:
 
 ## Layout and tests
 
-`src/kairo/` core (`config`, `cache`, `answer_cache`, `fast_talker`, `slow_thinker`, `router`, `rerank`), `providers/` (OpenAI, local, FAISS, Qdrant, fakes), `voice/`, `server/` (FastAPI + the page in `static/`), `bench/` (domains, gold answers, runner). Design notes: `docs/superpowers/specs/` and `plans/`.
+`src/kairo/` core (`config`, `cache`, `answer_cache`, `fast_talker`, `slow_thinker`, `router`, `rerank`), `providers/` (OpenAI, local, FAISS, Qdrant, fakes), `voice/`, `server/` (FastAPI; serves the built UI from `static/`), `bench/` (domains, gold answers, runner), `web/` (React app). Design notes: `docs/superpowers/specs/` and `plans/`.
 
 ```bash
-.venv/bin/python -m pytest -q
+make test        # Python (pytest) and web (typecheck, lint, vitest)
+make check       # lint + all tests
 ```
 
 ## Known limitations

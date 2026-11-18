@@ -30,4 +30,4 @@ pythonpath = ["src"]
 kairo = "kairo.cli:main"
 
 [tool.setuptools.package-data]
-kairo = ["server/static/*"]
+kairo = ["server/static/*", "server/static/assets/*"]

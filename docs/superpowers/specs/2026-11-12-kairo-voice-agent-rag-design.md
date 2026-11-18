@@ -121,3 +121,13 @@ FastAPI + one-page UI (`server/`). A websocket is one call. Browser records audi
 
 ### 11.3 Known gaps
 Scripted calls are predictable by construction; knowledge bases are small; background speculation contends with the foreground call for the API (tail latency worsened in the live run); no barge-in; no real call transcripts.
+
+### 11.4 Web UI rewrite (React, 2026-11-18)
+
+The first lab page (vanilla JS served from `server/static/`) was replaced by a React 19 + TypeScript app in `web/`, styled after a voice-assistant reference (pastel gradient, white cards, black pill controls, wireframe orb, dock with a central mic).
+
+- **Layout:** `web/` is a separate Vite project; `npm run build` writes into `src/kairo/server/static/` (git-ignored). The Python package layout and server routes are unchanged; `/` serves `index.html` when built, else a fallback page that says how to build it, so Python tests do not need Node.
+- **Structure:** `api/` (typed wire protocol, reconnecting socket, REST, session), `state/` (Zustand; a pure reducer turns each server message into a state patch), `features/` (call, board, experiments, research, settings), `components/` (design-system primitives), `styles/` (tokens), `lib/` (pure helpers).
+- **Server change:** `ready.domain.scenarios[].questions` (first four questions) so the Home screen can offer example questions.
+- **Behaviour carried over:** every lab capability (board, ledger, scripted calls, gold checks, partial-typing speculation, experiments with a cost confirmation, research page reading saved runs). New: browser-recorded voice messages shown as playable bubbles, live transcript while speaking (browser SpeechRecognition where available), voice-level-driven orb.
+- **Quality bar:** strict TypeScript, ESLint (incl. React hooks rules), 114 unit/component tests, self-hosted font (no runtime third-party requests), responsive down to 390 px, reduced-motion respected.

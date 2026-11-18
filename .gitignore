@@ -37,3 +37,10 @@ qdrant_storage/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Web app (web/): dependencies and the production build, which is written into the Python package
+node_modules/
+web/dist/
+web/*.tsbuildinfo
+src/kairo/server/static/*
+!src/kairo/server/static/.gitkeep
