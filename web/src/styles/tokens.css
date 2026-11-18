@@ -1,0 +1,46 @@
+/* Design tokens. Every colour, radius and shadow in the app comes from here. */
+:root {
+  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --ink: #0e0e10;
+  --ink-2: #55555f;
+  --ink-3: #9b9ba6;
+  --on-ink: #ffffff;
+
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-solid: #ffffff;
+  --surface-dim: rgba(255, 255, 255, 0.5);
+  --line: rgba(14, 14, 16, 0.08);
+  --base: #ece7dd;
+
+  --purple: #8b6be8;
+  --orange: #f29a55;
+  --pink: #e772b5;
+
+  --console: #15111f;
+  --console-2: #1f1a2e;
+  --console-text: #c9c2dd;
+  --console-dim: #8a82a3;
+  --lamp-off: #2b2540;
+
+  --lamp-direct: #5b9cf0;
+  --lamp-predicted: #f2a93b;
+  --lamp-neighbor: #3cc9a0;
+  --lamp-partial: #a98af0;
+  --lamp-miss: #ee6e52;
+  --lamp-draft: #f6cb5a;
+
+  --ok: #1d8a5b;
+  --bad: #c0432c;
+
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 12px 34px rgba(130, 96, 180, 0.14);
+  --shadow-lift: 0 18px 44px rgba(130, 96, 180, 0.24);
+
+  --dock-h: 92px;
+  --phone-w: 460px;
+}

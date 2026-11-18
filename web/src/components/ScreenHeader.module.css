@@ -1,0 +1,5 @@
+.head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; padding: 14px 16px 8px; }
+.mid { text-align: center; min-width: 0; }
+.title { font-size: 1.05rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub { color: var(--ink-3); font-size: .86rem; min-height: 1.2em; }
+.spacer { width: 44px; height: 44px; }

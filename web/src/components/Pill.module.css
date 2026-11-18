@@ -1,0 +1,6 @@
+.pill { border: 0; background: var(--surface); color: var(--ink); border-radius: var(--radius-pill);
+  padding: 9px 16px; font-weight: 600; font-size: .9rem; white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(60, 40, 90, .07); transition: background .15s, color .15s; }
+.pill:hover { background: var(--surface-solid); }
+.active { background: var(--ink); color: var(--on-ink); }
+.active:hover { background: var(--ink); }

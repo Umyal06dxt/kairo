@@ -1,0 +1,8 @@
+.btn { display: inline-grid; place-items: center; border: 0; border-radius: 50%; flex: none;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }
+.btn:active { transform: scale(0.94); }
+.light { background: var(--surface-solid); color: var(--ink); box-shadow: 0 4px 14px rgba(60, 40, 90, .1); }
+.dark { background: var(--ink); color: var(--on-ink); box-shadow: 0 10px 26px rgba(14, 14, 16, .3); }
+.ghost { background: transparent; color: var(--ink); }
+.light:hover { box-shadow: 0 6px 18px rgba(60, 40, 90, .16); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }

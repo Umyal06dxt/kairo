@@ -1,0 +1,3 @@
+.wave { display: flex; align-items: center; gap: 2px; height: 28px; }
+.bar { width: 3px; border-radius: 2px; background: currentColor; opacity: .35; transition: height .08s linear; }
+.done { opacity: 1; }

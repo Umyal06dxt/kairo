@@ -1,0 +1,6 @@
+.sheet { border: 0; padding: 0; background: transparent; width: min(560px, 100vw); max-height: 92vh; margin: auto auto 0; overflow: visible; }
+.sheet::backdrop { background: rgba(20, 12, 36, .5); backdrop-filter: blur(3px); }
+.panel { background: var(--surface-solid); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 22px 22px 26px;
+  max-height: 92vh; overflow-y: auto; box-shadow: 0 -20px 60px rgba(40, 20, 70, .3); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+@media (min-width: 700px) { .sheet { margin: auto; } .panel { border-radius: var(--radius-lg); } }
