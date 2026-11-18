@@ -1,0 +1,4 @@
+.note { display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--on-ink); border-radius: 22px; padding: 10px 16px 10px 10px; min-width: 240px; }
+.play { width: 38px; height: 38px; border-radius: 50%; border: 0; background: #fff; color: var(--ink); display: grid; place-items: center; flex: none; }
+.wave { flex: 1; color: #fff; }
+.time { font-size: .8rem; opacity: .85; }

@@ -1,0 +1,18 @@
+.console { background: var(--console); color: var(--console-text); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-lift); }
+.head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.title { color: #f1ecff; font-size: 1.1rem; }
+.sub { color: var(--console-dim); font-size: .85rem; margin-top: 2px; max-width: 34ch; }
+.counters { display: flex; gap: 18px; margin: 0; }
+.counters div { text-align: right; }
+.counters dt { font-size: .74rem; color: var(--console-dim); }
+.counters dd { margin: 0; font-size: 1.3rem; font-weight: 800; color: #fbf9ff; }
+.board { margin-top: 18px; display: grid; gap: 6px; }
+.row { display: grid; grid-template-columns: 170px 1fr; gap: 10px; align-items: center; padding: 3px 6px; border-radius: 8px; }
+.name { font-size: .8rem; color: #b6add2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lamps { display: flex; flex-wrap: wrap; gap: 5px; }
+.extraHead { margin: 12px 0 4px; font-size: .78rem; color: var(--console-dim); }
+.extras { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 6px; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0; margin: 18px 0 6px; font-size: .8rem; color: #b6add2; }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.cfg { font-size: .8rem; color: var(--console-dim); border-top: 1px solid #2a2340; padding-top: 10px; margin-top: 8px; }
+@media (max-width: 520px) { .row { grid-template-columns: 112px 1fr; } .console { padding: 16px 14px; } }

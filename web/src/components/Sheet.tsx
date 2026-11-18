@@ -11,8 +11,13 @@ export function Sheet({ open, title, onClose, children }: Props) {
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (open && !d.open) (d.showModal ? d.showModal() : d.setAttribute("open", ""));
-    if (!open && d.open) (d.close ? d.close() : d.removeAttribute("open"));
+    if (open && !d.open) {
+      if (d.showModal) d.showModal();
+      else d.setAttribute("open", ""); // very old browsers / jsdom
+    } else if (!open && d.open) {
+      if (d.close) d.close();
+      else d.removeAttribute("open");
+    }
   }, [open]);
 
   return (

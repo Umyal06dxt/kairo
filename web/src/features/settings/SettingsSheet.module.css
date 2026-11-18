@@ -1,0 +1,15 @@
+.form { display: grid; gap: 16px; margin-top: 8px; }
+.sub { color: var(--ink-3); font-size: .86rem; }
+.field { display: grid; gap: 6px; border: 0; padding: 0; margin: 0; }
+.field > span, .field legend { font-weight: 700; display: flex; justify-content: space-between; padding: 0; }
+.field small { color: var(--ink-3); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+select { padding: 10px 12px; background: var(--surface-solid); border: 1px solid var(--line); border-radius: var(--radius-sm); width: 100%; }
+.profile { display: grid; grid-template-columns: 22px 1fr; gap: 2px 8px; padding: 10px 12px; border-radius: var(--radius-sm); background: rgba(14, 14, 16, .04); }
+.profile:has(input:checked) { box-shadow: inset 0 0 0 2px var(--purple); background: #faf7ff; }
+.profile small { grid-column: 2; color: var(--ink-3); }
+.check { display: flex; gap: 8px; align-items: center; }
+input[type="range"] { width: 100%; accent-color: var(--purple); }
+.actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.go { border: 0; background: var(--ink); color: var(--on-ink); border-radius: var(--radius-pill); padding: 12px 22px; font-weight: 700; }
+.cancel { border: 1px solid var(--line); background: transparent; border-radius: var(--radius-pill); padding: 12px 20px; }

@@ -1,0 +1,9 @@
+.panel { padding: 4px 2px; }
+.title { font-size: 1.05rem; }
+.sub { color: var(--ink-3); font-size: .86rem; margin-top: 2px; }
+.list { list-style: none; margin: 14px 0 0; padding: 0; }
+.item { display: grid; grid-template-columns: 38px 12px 1fr; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); font-size: .88rem; }
+.time { color: var(--ink-3); }
+.item small { display: block; color: var(--ink-2); font-size: .82rem; }
+.item ul { margin: 4px 0 0; padding-left: 16px; }
+.empty { color: var(--ink-3); font-size: .9rem; margin-top: 14px; }

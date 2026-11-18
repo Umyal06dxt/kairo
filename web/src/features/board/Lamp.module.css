@@ -1,0 +1,13 @@
+.lamp { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--lamp-off); flex: none;
+  transition: background .35s, box-shadow .35s; }
+.on { box-shadow: 0 0 9px 1px currentColor; }
+.direct { color: var(--lamp-direct); } .predicted { color: var(--lamp-predicted); } .neighbor { color: var(--lamp-neighbor); }
+.partial { color: var(--lamp-partial); } .miss { color: var(--lamp-miss); } .draft { color: var(--lamp-draft); }
+.on.direct { background: var(--lamp-direct); } .on.predicted { background: var(--lamp-predicted); }
+.on.neighbor { background: var(--lamp-neighbor); } .on.partial { background: var(--lamp-partial); }
+.on.miss { background: var(--lamp-miss); } .on.draft { background: var(--lamp-draft); }
+.used { animation: used 1.6s ease-out 1; }
+@keyframes used {
+  0% { box-shadow: 0 0 0 0 #fff, 0 0 16px 5px currentColor; transform: scale(1.4); }
+  100% { transform: scale(1); }
+}

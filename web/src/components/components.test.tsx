@@ -27,6 +27,8 @@ describe("design-system components", () => {
     render(<MemoryRouter initialEntries={["/chat"]}><Dock onMic={onMic} onSettings={onSettings} /></MemoryRouter>);
     expect(screen.getByRole("link", { name: "Conversation" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Experiments" })).toHaveAttribute("href", "/experiments");
+    expect(screen.getByRole("link", { name: "Memory board" })).toHaveAttribute("href", "/lab");
     await userEvent.click(screen.getByRole("button", { name: "Start talking" }));
     await userEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(onMic).toHaveBeenCalledOnce();

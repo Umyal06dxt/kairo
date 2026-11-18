@@ -1,0 +1,6 @@
+.grid { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: 36px; padding: 28px 32px 60px; max-width: 1280px; margin: 0 auto; }
+.out { min-width: 0; }
+.saved { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.saved select { flex: 1; max-width: 560px; padding: 9px 12px; background: var(--surface-solid); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.empty { color: var(--ink-3); font-size: 1.05rem; max-width: 40ch; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; padding: 18px 16px 60px; } }

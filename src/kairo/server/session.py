@@ -301,8 +301,9 @@ class Session:
                    "llm": llm_name, "embedder": emb_name, "notes": notes,
                    "domain": {"key": self.domain.key, "title": self.domain.title,
                               "blurb": self.domain.blurb,
-                              "scenarios": [{"key": k, "turns": len(v)} for k, v in
-                                            self.domain.scenarios.items()]},
+                              "scenarios": [{"key": k, "turns": len(v),
+                                             "questions": [t.q for t in v[:4]]}
+                                            for k, v in self.domain.scenarios.items()]},
                    "voice": {"stt": self.shared.stt_state, "tts": True}})
         self.push_cache()
         self._spawn(self._warm())

@@ -35,12 +35,35 @@ def test_info_and_index(client):
     assert client.get("/").status_code == 200
 
 
+def test_index_serves_the_built_ui_when_present(tmp_path):
+    static = tmp_path / "static"
+    static.mkdir()
+    (static / "index.html").write_text("<!doctype html><title>Kairo</title><div id=root></div>")
+    (static / "app.js").write_text("console.log(1)")
+    app = create_app(load_voice=False, experiment_dir=tmp_path / "exp", static_dir=static)
+    with TestClient(app) as c:
+        r = c.get("/")
+        assert r.status_code == 200 and 'id=root' in r.text
+        assert c.get("/static/app.js").status_code == 200
+
+
+def test_index_explains_how_to_build_the_ui_when_missing(tmp_path):
+    app = create_app(load_voice=False, experiment_dir=tmp_path / "exp", static_dir=tmp_path / "empty")
+    with TestClient(app) as c:
+        r = c.get("/")
+        assert r.status_code == 200 and "npm run build" in r.text  # a clear next step, not a 404
+        assert c.get("/api/info").status_code == 200  # the API works without the UI
+
+
 def test_call_lifecycle_over_websocket(client):
     with client.websocket_connect("/ws") as ws:
         ws.send_json(HELLO)
         ready, _ = drain_until(ws, "ready")
         assert ready["board"]["n_chunks"] >= 20 and ready["llm"] == "extractive"
         assert ready["domain"]["key"] == "bank" and len(ready["domain"]["scenarios"]) == 10
+        first = ready["domain"]["scenarios"][0]
+        assert 1 <= len(first["questions"]) <= 4
+        assert all(isinstance(q, str) and q.strip() for q in first["questions"])
         assert ready["config"]["strategy"] == "none"
         ws.send_json({"t": "say", "text": "How much is the overdraft fee?"})
         turn, seen = drain_until(ws, "turn")

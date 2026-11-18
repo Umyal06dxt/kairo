@@ -20,7 +20,8 @@ export function Dock({ onMic, onSettings }: Props) {
         <button type="button" className={styles.mic} onClick={onMic} aria-label="Start talking" title="Start talking">
           <Icon name="mic" size={30} />
         </button>
-        {link("/lab", "lab", "Memory board", styles.labOnly)}
+        {link("/lab", "lab", "Memory board", styles.narrowOnly)}
+        {link("/experiments", "chart", "Experiments", styles.wideOnly)}
         <button type="button" className={styles.item} onClick={onSettings} aria-label="Settings" title="Settings">
           <Icon name="settings" />
         </button>

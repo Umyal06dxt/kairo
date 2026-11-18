@@ -13,3 +13,10 @@ if (!window.matchMedia) {
   })) as typeof window.matchMedia;
 }
 Element.prototype.scrollTo = Element.prototype.scrollTo ?? (() => {});
+
+// jsdom has no 2D canvas; components must not crash without one (the Orb falls back to its glow).
+HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
+
+// jsdom does not implement media playback; voice-note bubbles create <audio> elements.
+HTMLMediaElement.prototype.pause = () => {};
+HTMLMediaElement.prototype.play = () => Promise.resolve();

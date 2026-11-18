@@ -1,0 +1,14 @@
+.wrap { display: grid; gap: 14px; }
+.note { color: var(--ink-2); font-size: .86rem; }
+.wrap h3 { font-size: 1rem; margin-top: 10px; }
+.tbl { overflow-x: auto; background: var(--surface); border-radius: var(--radius-md); padding: 6px 10px; box-shadow: var(--shadow-soft); }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+tr:last-child td { border-bottom: 0; }
+th { font-weight: 600; color: var(--ink-3); font-size: .8rem; vertical-align: bottom; }
+td.best { font-weight: 800; color: var(--ok); }
+.chart { width: 100%; max-width: 760px; }
+.chart text { font-family: var(--font); fill: var(--ink); font-size: 12px; }
+.chart .muted { fill: var(--ink-3); }
+.chart .grid { stroke: var(--line); }

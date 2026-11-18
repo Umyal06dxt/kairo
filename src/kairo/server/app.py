@@ -9,15 +9,26 @@ import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from ..bench.domains import DOMAIN_KEYS, get_domain
 from ..bench.run import PROFILES, format_experiment, run_experiment
 from .session import EMBEDDERS, Session, Shared
 
-STATIC = Path(__file__).parent / "static"
+STATIC = Path(__file__).parent / "static"  # the React build (web/) is written here
 EXPERIMENT_DIR = Path("data/experiments")
+
+FALLBACK_HTML = """<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kairo lab</title>
+<body style="font:16px/1.6 system-ui,sans-serif;max-width:560px;margin:12vh auto;padding:0 20px;color:#14141a">
+<h1 style="margin:0 0 8px">Kairo lab is running, but the web UI isn't built yet</h1>
+<p>The server is healthy. The interface is a React app that needs a one-time build:</p>
+<pre style="background:#f1eef7;padding:14px;border-radius:10px;overflow-x:auto">cd web
+npm install
+npm run build</pre>
+<p>Then reload this page. For live-reload development, run <code>npm run dev</code> in <code>web/</code>
+(it proxies to this server). The API is available now at <a href="/api/info">/api/info</a>.</p></body></html>"""
 
 
 class Experiments:
@@ -83,7 +94,7 @@ class Experiments:
 
 
 def create_app(whisper: str = "base.en", load_voice: bool = True,
-               experiment_dir: Path = EXPERIMENT_DIR) -> FastAPI:
+               experiment_dir: Path = EXPERIMENT_DIR, static_dir: Path = STATIC) -> FastAPI:
     shared = Shared()
     experiments = Experiments(experiment_dir)
 
@@ -97,9 +108,10 @@ def create_app(whisper: str = "base.en", load_voice: bool = True,
     app = FastAPI(title="Kairo lab", lifespan=lifespan)
     app.state.shared, app.state.experiments = shared, experiments
 
-    @app.get("/")
-    async def index() -> FileResponse:
-        return FileResponse(STATIC / "index.html")
+    @app.get("/", response_model=None)
+    async def index() -> FileResponse | HTMLResponse:
+        page = static_dir / "index.html"
+        return FileResponse(page) if page.exists() else HTMLResponse(FALLBACK_HTML)
 
     @app.get("/api/info")
     async def info() -> dict:
@@ -147,7 +159,8 @@ def create_app(whisper: str = "base.en", load_voice: bool = True,
         finally:
             await session.close()
 
-    app.mount("/static", StaticFiles(directory=STATIC), name="static")
+    static_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
     return app
 
 

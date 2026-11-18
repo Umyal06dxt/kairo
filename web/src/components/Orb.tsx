@@ -18,7 +18,7 @@ const prefersReducedMotion = (): boolean =>
 export function Orb({ level = 0, size = 280, rings = 46, calm = false }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const levelRef = useRef(level);
-  levelRef.current = level;
+  useEffect(() => { levelRef.current = level; }, [level]);
 
   useEffect(() => {
     const el = canvas.current;
